@@ -104,8 +104,17 @@ exports.login = async (req, res, next) => {
     user.otpExpires = otpExpires;
     await user.save();
 
-    // Send OTP email
-    await sendOTPEmail(email, user.name, otp);
+    // Send OTP email (skip if SKIP_EMAIL is enabled for production)
+    if (process.env.SKIP_EMAIL !== 'true') {
+      try {
+        await sendOTPEmail(email, user.name, otp);
+      } catch (emailError) {
+        console.error('Email sending failed, but continuing...', emailError.message);
+        // Continue without failing - OTP is still in database
+      }
+    } else {
+      console.log(`[SKIP_EMAIL] OTP for ${email}: ${otp}`);
+    }
 
     res.status(200).json({
       success: true,
