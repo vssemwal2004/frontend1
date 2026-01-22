@@ -25,17 +25,17 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-secondary-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-50 via-white to-warning-50 px-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-2xl mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-brand-600 rounded-2xl mb-4 shadow-lg shadow-brand-600/20">
             <LogIn className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-4xl font-display font-bold text-neutral-900 mb-2">
             Welcome Back
           </h1>
           <p className="text-neutral-600">
-            Sign in to continue booking your events
+            Sign in to continue your bookings
           </p>
         </div>
 
@@ -80,7 +80,7 @@ const LoginPage = () => {
             <button
               type="submit"
               disabled={loading}
-              className="btn btn-primary w-full flex items-center justify-center gap-2"
+              className="btn w-full flex items-center justify-center gap-2 bg-brand-600 text-white hover:bg-brand-700 focus:ring-brand-500"
             >
               {loading ? (
                 <>
@@ -99,7 +99,7 @@ const LoginPage = () => {
           <div className="mt-6 text-center">
             <p className="text-neutral-600 text-sm">
               Don't have an account?{' '}
-              <Link to="/signup" className="text-primary-600 hover:text-primary-700 font-medium">
+              <Link to="/signup" className="text-brand-700 hover:text-brand-800 font-medium">
                 Sign up
               </Link>
             </p>

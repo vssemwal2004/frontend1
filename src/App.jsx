@@ -9,6 +9,7 @@ import SignupPage from '@/pages/SignupPage';
 import EventsListPage from '@/pages/EventsListPage';
 import EventDetailPage from '@/pages/EventDetailPage';
 import BookingConfirmationPage from '@/pages/BookingConfirmationPage';
+import HomePage from '@/home/HomePage';
 
 function App() {
   return (
@@ -19,22 +20,20 @@ function App() {
             <Navbar />
             <main className="flex-grow">
               <Routes>
+                {/* Public Routes */}
+                <Route path="/home" element={<HomePage />} />
+                <Route path="/" element={<Navigate to="/home" replace />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
+
                 {/* Protected Routes */}
                 <Route
                   path="/events"
-                  element={
-                    <ProtectedRoute>
-                      <EventsListPage />
-                    </ProtectedRoute>
-                  }
+                  element={<EventsListPage />}
                 />
                 <Route
                   path="/events/:id"
-                  element={
-                    <ProtectedRoute>
-                      <EventDetailPage />
-                    </ProtectedRoute>
-                  }
+                  element={<EventDetailPage />}
                 />
                 <Route
                   path="/booking/confirmation/:id"
@@ -45,11 +44,8 @@ function App() {
                   }
                 />
 
-                {/* Default Route */}
-                <Route path="/" element={<Navigate to="/events" replace />} />
-
                 {/* 404 Route */}
-                <Route path="*" element={<Navigate to="/events" replace />} />
+                <Route path="*" element={<Navigate to="/home" replace />} />
               </Routes>
             </main>
             <Footer />

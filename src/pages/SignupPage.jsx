@@ -26,17 +26,17 @@ const SignupPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-secondary-50 via-white to-primary-50 px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-warning-50 via-white to-brand-50 px-4 py-12">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-secondary-600 rounded-2xl mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-brand-600 rounded-2xl mb-4 shadow-lg shadow-brand-600/20">
             <UserPlus className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-4xl font-display font-bold text-neutral-900 mb-2">
             Create Account
           </h1>
           <p className="text-neutral-600">
-            Sign up to start booking amazing events
+            Sign up to start booking your trips
           </p>
         </div>
 
@@ -96,7 +96,7 @@ const SignupPage = () => {
             <button
               type="submit"
               disabled={loading}
-              className="btn btn-secondary w-full flex items-center justify-center gap-2"
+              className="btn w-full flex items-center justify-center gap-2 bg-brand-600 text-white hover:bg-brand-700 focus:ring-brand-500"
             >
               {loading ? (
                 <>
@@ -115,7 +115,7 @@ const SignupPage = () => {
           <div className="mt-6 text-center">
             <p className="text-neutral-600 text-sm">
               Already have an account?{' '}
-              <Link to="/login" className="text-secondary-600 hover:text-secondary-700 font-medium">
+              <Link to="/login" className="text-brand-700 hover:text-brand-800 font-medium">
                 Sign in
               </Link>
             </p>
