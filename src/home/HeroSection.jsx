@@ -11,6 +11,15 @@ const getTodayISODate = () => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
+const getTomorrowISODate = () => {
+  const now = new Date();
+  now.setDate(now.getDate() + 1);
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 const formatPrettyDate = (isoDate) => {
   if (!isoDate) return '';
   const [y, m, d] = isoDate.split('-').map(Number);
@@ -26,13 +35,13 @@ const formatPrettyDate = (isoDate) => {
 const HeroSection = () => {
   const navigate = useNavigate();
 
-  const [heroImageUrl, setHeroImageUrl] = useState('/hero.png');
-
   const today = useMemo(() => getTodayISODate(), []);
+  const tomorrow = useMemo(() => getTomorrowISODate(), []);
 
   const [fromState, setFromState] = useState('Karnataka');
   const [toState, setToState] = useState('Tamil Nadu');
   const [journeyDate, setJourneyDate] = useState(today);
+  const [bookingForWomen, setBookingForWomen] = useState(false);
   const [error, setError] = useState('');
 
   const onSwap = () => {
@@ -41,6 +50,9 @@ const HeroSection = () => {
       return toState;
     });
   };
+
+  const setToday = () => setJourneyDate(today);
+  const setTomorrow = () => setJourneyDate(tomorrow);
 
   const onSubmit = (e) => {
     e.preventDefault();
@@ -71,67 +83,33 @@ const HeroSection = () => {
   };
 
   return (
-    <section className="relative overflow-hidden">
-      {/* Preload hero image with fallback */}
-      <img
-        src={heroImageUrl}
-        alt=""
-        className="hidden"
-        onError={() => {
-          setHeroImageUrl((prev) => {
-            if (prev === '/hero.png') return '/hero.webp';
-            return '';
-          });
-        }}
-      />
-
-      {/* Background */}
-      <div className="absolute inset-0">
-        <div
-          className="h-full w-full bg-center bg-cover"
-          style={{
-            backgroundImage: heroImageUrl
-              ? `url(${heroImageUrl})`
-              : 'linear-gradient(90deg, #7f1d1d, #fef3c7)',
-          }}
+    <section className="relative bg-white">
+      {/* Hero Image - Original size, no overlays */}
+      <div className="w-full">
+        <img
+          src="/hero.webp"
+          alt="Bus Booking Banner"
+          className="w-full h-auto object-contain"
+          style={{ display: 'block' }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#4a0c1a]/90 via-[#7f1d1d]/55 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-white" />
       </div>
 
-      <div className="relative container-custom pt-10 pb-12 md:pt-16 md:pb-16">
-        <div className="max-w-3xl">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/15 text-white px-4 py-2 border border-white/20 backdrop-blur">
-            <span className="h-2 w-2 rounded-full bg-warning-300" />
-            <span className="text-sm font-medium">Fast bookings • Safe payments • 24×7 support</span>
-          </div>
-
-          <h1 className="mt-5 text-4xl md:text-6xl font-extrabold tracking-tight text-white text-balance">
-            India&apos;s No. 1 online
-            <span className="block">bus ticket booking site</span>
-          </h1>
-
-          <p className="mt-4 text-base md:text-lg text-white/90 max-w-2xl">
-            Book intercity buses across India with live availability, instant confirmation, and flexible date selection.
-          </p>
-        </div>
-
-        {/* Search Card */}
-        <div className="mt-10 md:mt-12">
+      {/* Booking Card - Positioned to overlap 50% on image, 50% below */}
+      <div className="relative px-4 md:px-8 lg:px-16">
+        <div className="max-w-7xl mx-auto -mt-32 relative z-10">
           <form
             onSubmit={onSubmit}
-            className="bg-white/95 backdrop-blur rounded-3xl shadow-2xl border border-neutral-200 overflow-hidden"
+            className="bg-white rounded-2xl shadow-[0_4px_24px_rgba(0,0,0,0.12)] border border-gray-200 p-3"
           >
-            <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr_1fr_auto] gap-0">
-              {/* From */}
-              <div className="p-5 md:p-6">
-                <label className="text-xs font-semibold text-neutral-500">From</label>
-                <div className="mt-2 flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-neutral-100 flex items-center justify-center">
-                    <MapPin className="w-5 h-5 text-neutral-700" />
-                  </div>
+            {/* Main Booking Form Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 items-end">
+              {/* From Location */}
+              <div className="lg:col-span-3">
+                <label className="block text-xs font-medium text-gray-600 mb-1">From</label>
+                <div className="flex items-center gap-2 border border-gray-300 rounded-lg px-2 py-1.5 bg-white">
+                  <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" />
                   <select
-                    className="input !py-3 !px-3 !rounded-xl"
+                    className="w-full text-sm font-semibold text-gray-900 bg-transparent border-none outline-none focus:ring-0"
                     value={fromState}
                     onChange={(e) => setFromState(e.target.value)}
                     aria-label="From State"
@@ -145,28 +123,26 @@ const HeroSection = () => {
                 </div>
               </div>
 
-              {/* Swap */}
-              <div className="flex items-center justify-center px-3 lg:border-x border-neutral-200">
+              {/* Swap Button */}
+              <div className="lg:col-span-1 flex items-center justify-center">
                 <button
                   type="button"
                   onClick={onSwap}
-                  className="h-11 w-11 rounded-full bg-neutral-100 hover:bg-neutral-200 transition-colors flex items-center justify-center"
+                  className="h-9 w-9 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center border border-gray-300"
                   aria-label="Swap From and To"
-                  title="Swap"
+                  title="Swap locations"
                 >
-                  <ArrowLeftRight className="w-5 h-5 text-neutral-700" />
+                  <ArrowLeftRight className="w-4 h-4 text-gray-700" />
                 </button>
               </div>
 
-              {/* To */}
-              <div className="p-5 md:p-6 lg:border-r border-neutral-200">
-                <label className="text-xs font-semibold text-neutral-500">To</label>
-                <div className="mt-2 flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-neutral-100 flex items-center justify-center">
-                    <MapPin className="w-5 h-5 text-neutral-700" />
-                  </div>
+              {/* To Location */}
+              <div className="lg:col-span-3">
+                <label className="block text-xs font-medium text-gray-600 mb-1">To</label>
+                <div className="flex items-center gap-2 border border-gray-300 rounded-lg px-2 py-1.5 bg-white">
+                  <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" />
                   <select
-                    className="input !py-3 !px-3 !rounded-xl"
+                    className="w-full text-sm font-semibold text-gray-900 bg-transparent border-none outline-none focus:ring-0"
                     value={toState}
                     onChange={(e) => setToState(e.target.value)}
                     aria-label="To State"
@@ -180,70 +156,100 @@ const HeroSection = () => {
                 </div>
               </div>
 
-              {/* Date */}
-              <div className="p-5 md:p-6">
-                <label className="text-xs font-semibold text-neutral-500">Date of Journey</label>
-                <div className="mt-2 flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-neutral-100 flex items-center justify-center">
-                    <Calendar className="w-5 h-5 text-neutral-700" />
-                  </div>
-                  <div className="w-full">
+              {/* Date of Journey with Today/Tomorrow buttons */}
+              <div className="lg:col-span-3">
+                <label className="block text-xs font-medium text-gray-600 mb-1">Date of Journey</label>
+                <div>
+                  <div className="flex items-center gap-2 border border-gray-300 rounded-lg px-2 py-1.5 bg-white mb-1">
+                    <Calendar className="w-4 h-4 text-gray-500 flex-shrink-0" />
                     <input
-                      className="input !py-3 !px-3 !rounded-xl"
+                      className="w-full text-sm font-semibold text-gray-900 bg-transparent border-none outline-none focus:ring-0"
                       type="date"
                       min={today}
                       value={journeyDate}
                       onChange={(e) => setJourneyDate(e.target.value)}
                       aria-label="Journey Date"
                     />
-                    <div className="mt-1 text-xs text-neutral-500">
-                      Selected: <span className="font-medium">{formatPrettyDate(journeyDate) || '—'}</span>
-                    </div>
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      onClick={setToday}
+                      className={`px-3 py-0.5 text-xs font-medium rounded-md transition-colors ${
+                        journeyDate === today
+                          ? 'bg-gray-200 text-gray-900'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      Today
+                    </button>
+                    <button
+                      type="button"
+                      onClick={setTomorrow}
+                      className={`px-3 py-0.5 text-xs font-medium rounded-md transition-colors ${
+                        journeyDate === tomorrow
+                          ? 'bg-gray-200 text-gray-900'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      Tomorrow
+                    </button>
                   </div>
                 </div>
               </div>
 
-              {/* Submit */}
-              <div className="p-5 md:p-6 flex items-center justify-center">
-                <button
-                  type="submit"
-                  className="btn bg-brand-600 hover:bg-brand-700 text-white rounded-full px-8 py-3 flex items-center gap-2 shadow-lg shadow-brand-600/25"
-                >
-                  <Search className="w-5 h-5" />
-                  Search buses
-                </button>
+              {/* Booking for Women Toggle */}
+              <div className="lg:col-span-2 flex items-center justify-end gap-2">
+                <div className="flex items-center gap-1.5">
+                  <img
+                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ec4899'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"
+                    alt="Women"
+                    className="w-6 h-6"
+                  />
+                  <div>
+                    <div className="text-xs font-medium text-gray-700">Booking for women</div>
+                    <a href="#" className="text-[10px] text-pink-600 hover:underline">
+                      Know more
+                    </a>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer ml-1">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={bookingForWomen}
+                      onChange={(e) => setBookingForWomen(e.target.checked)}
+                    />
+                    <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-pink-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-pink-600"></div>
+                  </label>
+                </div>
               </div>
             </div>
 
-            {error ? (
-              <div className="px-6 pb-6 -mt-2">
-                <div className="rounded-xl bg-error-50 border border-error-200 text-error-700 px-4 py-3 text-sm">
+            {/* Search Button */}
+            <div className="mt-3 flex justify-center">
+              <button
+                type="submit"
+                className="bg-red-600 hover:bg-red-700 text-white font-semibold rounded-full px-10 py-2.5 flex items-center gap-2 shadow-lg transition-all"
+              >
+                <Search className="w-4 h-4" />
+                Search buses
+              </button>
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="mt-2">
+                <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 px-3 py-2 text-xs">
                   {error}
                 </div>
               </div>
-            ) : null}
+            )}
           </form>
-
-          <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="rounded-2xl bg-white/90 border border-white/30 backdrop-blur px-4 py-3 text-sm text-neutral-900">
-              <span className="font-semibold">No hidden charges</span>
-              <span className="text-neutral-600"> — transparent fares</span>
-            </div>
-            <div className="rounded-2xl bg-white/90 border border-white/30 backdrop-blur px-4 py-3 text-sm text-neutral-900">
-              <span className="font-semibold">Instant confirmation</span>
-              <span className="text-neutral-600"> — book in seconds</span>
-            </div>
-            <div className="rounded-2xl bg-white/90 border border-white/30 backdrop-blur px-4 py-3 text-sm text-neutral-900">
-              <span className="font-semibold">Flexible dates</span>
-              <span className="text-neutral-600"> — plan your journey</span>
-            </div>
-          </div>
-
-          <p className="mt-4 text-xs text-white/80">
-            Put your landing image at <span className="font-semibold">public/hero.png</span> (recommended).
-          </p>
         </div>
       </div>
+
+      {/* Spacing below the card */}
+      <div className="h-16"></div>
     </section>
   );
 };
