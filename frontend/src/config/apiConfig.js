@@ -4,7 +4,9 @@
  */
 
 export const API_CONFIG = {
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
+  // Points to Bus Ticketing Backend (NOT Hackwow directly)
+  // Bus Backend handles auth, routes, etc. and delegates only booking to Hackwow
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api',
   timeout: 30000,
 };
 
@@ -39,7 +41,13 @@ export const API_ENDPOINTS = {
   searchBuses: '/buses/search',
   busSeats: (scheduleId) => `/buses/${scheduleId}/seats`,
   
-  // Booking endpoints
+  // Booking endpoints (Hackwow 3-step flow)
+  reserveSeat: '/bookings/reserve',          // Step 1: Lock seat
+  createOrder: '/bookings/create-order',     // Step 2: Create Razorpay order
+  confirmBooking: '/bookings/confirm',       // Step 3: Confirm after payment
+  releaseSeat: '/bookings/release',          // Cancel reservation
+  
+  // Booking endpoints (Legacy single-step)
   createBooking: '/bookings',
   myBookings: '/bookings/my-bookings',
   bookingById: (id) => `/bookings/${id}`,

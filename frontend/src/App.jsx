@@ -9,6 +9,7 @@ import SignupPage from '@/pages/SignupPage';
 import EventsListPage from '@/pages/EventsListPage';
 import EventDetailPage from '@/pages/EventDetailPage';
 import BookingConfirmationPage from '@/pages/BookingConfirmationPage';
+import MyBookingsPage from '@/pages/MyBookingsPage';
 import HomePage from '@/home/HomePage';
 import AdminLoginPage from '@/pages/AdminLoginPage';
 import AdminDashboardPage from '@/pages/AdminDashboardPage';
@@ -45,6 +46,14 @@ function App() {
                       <Route
                         path="/events/:id"
                         element={<EventDetailPage />}
+                      />
+                      <Route
+                        path="/my-bookings"
+                        element={
+                          <ProtectedRoute>
+                            <MyBookingsPage />
+                          </ProtectedRoute>
+                        }
                       />
                       <Route
                         path="/booking/confirmation/:id"

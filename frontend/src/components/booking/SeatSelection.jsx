@@ -6,6 +6,7 @@ const SeatSelection = () => {
     seatLayout, 
     selectedSeats, 
     bookedSeats,
+    lockedSeats, // Temporarily reserved seats (Redis locks)
     toggleSeatSelection, 
     loading, 
     error,
@@ -17,8 +18,28 @@ const SeatSelection = () => {
   };
 
   const getSeatStatus = (seatNumber) => {
-    if (bookedSeats.includes(seatNumber)) return 'booked';
-    if (selectedSeats.includes(seatNumber)) return 'selected';
+    // Convert to string for consistent comparison
+    const seatNumStr = String(seatNumber);
+    const seatNumInt = Number(seatNumber);
+    
+    // Check if seat is booked (check both string and number formats)
+    if (bookedSeats.includes(seatNumStr) || bookedSeats.includes(seatNumInt)) {
+      return 'booked';
+    }
+    
+    // Check if seat is locked (temporarily reserved by someone else)
+    const lockedSeat = lockedSeats?.find(ls => 
+      String(ls.seatNumber) === seatNumStr || Number(ls.seatNumber) === seatNumInt
+    );
+    if (lockedSeat) {
+      return 'locked';
+    }
+    
+    // Check if selected by current user
+    if (selectedSeats.includes(seatNumStr) || selectedSeats.includes(seatNumInt)) {
+      return 'selected';
+    }
+    
     return 'available';
   };
 
@@ -66,6 +87,7 @@ const SeatSelection = () => {
       <div className="mb-6 flex flex-wrap gap-4 p-4 bg-neutral-50 rounded-lg">
         <SeatLegend status="available" label="Available" />
         <SeatLegend status="selected" label="Selected" />
+        <SeatLegend status="locked" label="Reserved (Temporary)" />
         <SeatLegend status="booked" label="Booked" />
       </div>
 
@@ -150,13 +172,18 @@ const SeatSelection = () => {
 
 const SeatButton = ({ seatNumber, status, onClick }) => {
   const isBooked = status === 'booked';
+  const isLocked = status === 'locked'; // Temporarily reserved
   const isSelected = status === 'selected';
   const isAvailable = status === 'available';
 
   let buttonClasses = 'w-12 h-12 rounded-lg font-semibold text-sm transition-all relative flex items-center justify-center';
   
   if (isBooked) {
-    buttonClasses += ' bg-neutral-300 text-neutral-500 cursor-not-allowed';
+    // Red/dark for confirmed bookings
+    buttonClasses += ' bg-red-400 text-white cursor-not-allowed';
+  } else if (isLocked) {
+    // Grey for temporarily locked/reserved seats
+    buttonClasses += ' bg-gray-300 text-gray-600 cursor-not-allowed border-2 border-gray-400';
   } else if (isSelected) {
     buttonClasses += ' bg-primary-600 text-white shadow-lg scale-105';
   } else if (isAvailable) {
@@ -166,9 +193,9 @@ const SeatButton = ({ seatNumber, status, onClick }) => {
   return (
     <button
       onClick={onClick}
-      disabled={isBooked}
+      disabled={isBooked || isLocked}
       className={buttonClasses}
-      title={`Seat ${seatNumber} - ${status}`}
+      title={`Seat ${seatNumber} - ${status === 'locked' ? 'Temporarily Reserved' : status}`}
     >
       {isSelected && <Check className="w-5 h-5 absolute" />}
       <span className={isSelected ? 'opacity-0' : ''}>{seatNumber}</span>
@@ -180,7 +207,8 @@ const SeatLegend = ({ status, label }) => {
   let colorClass = '';
   if (status === 'available') colorClass = 'bg-green-100 border-2 border-green-300';
   if (status === 'selected') colorClass = 'bg-primary-600';
-  if (status === 'booked') colorClass = 'bg-neutral-300';
+  if (status === 'locked') colorClass = 'bg-gray-300 border-2 border-gray-400'; // Grey for temporarily reserved
+  if (status === 'booked') colorClass = 'bg-red-400'; // Red for confirmed bookings
 
   return (
     <div className="flex items-center gap-2">

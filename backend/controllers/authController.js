@@ -78,6 +78,14 @@ exports.login = async (req, res, next) => {
       });
     }
 
+    // Check if user has a password set
+    if (!user.password) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials. Please reset your password or contact support.'
+      });
+    }
+
     // Check if password matches
     const isMatch = await user.comparePassword(password);
 

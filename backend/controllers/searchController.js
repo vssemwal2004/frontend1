@@ -1,6 +1,7 @@
 const Schedule = require('../models/Schedule');
 const Route = require('../models/Route');
 const SeatAvailability = require('../models/SeatAvailability');
+const hackwowClient = require('../services/hackwowClient');
 
 // @desc    Search buses by source and destination
 // @route   GET /api/buses/search
@@ -76,7 +77,20 @@ exports.searchBuses = async (req, res, next) => {
         });
 
         const bookedSeats = seatAvailability ? seatAvailability.bookedSeats.map(s => s.seatNumber) : [];
-        const availableSeats = schedule.bus.totalSeats - bookedSeats.length;
+        
+        // Get locked seats from Hackwow if enabled
+        let lockedSeatsCount = 0;
+        if (process.env.USE_HACKWOW === 'true') {
+          try {
+            const entityId = hackwowClient.constructor.generateEntityId(schedule._id.toString(), date);
+            const hackwowSeats = await hackwowClient.getAllSeatsWithStatus(entityId);
+            lockedSeatsCount = hackwowSeats.filter(seat => seat.isLocked && !bookedSeats.includes(seat.seatNumber)).length;
+          } catch (err) {
+            console.error('[HACKWOW] Failed to get locked seats count:', err.message);
+          }
+        }
+        
+        const availableSeats = schedule.bus.totalSeats - bookedSeats.length - lockedSeatsCount;
 
         return {
           ...schedule.toObject(),
@@ -137,13 +151,79 @@ exports.getBusSeats = async (req, res, next) => {
 
     const bookedSeats = seatAvailability ? seatAvailability.bookedSeats.map(s => s.seatNumber) : [];
 
+    console.log('[SEARCH] Booked seats for schedule:', { scheduleId, date, bookedSeats });
+
+    // ==========================================
+    // HACKWOW INTEGRATION: Auto-sync seats and get locked seats
+    // ==========================================
+    let lockedSeats = []; // Seats temporarily reserved in Redis
+    
+    if (process.env.USE_HACKWOW === 'true') {
+      try {
+        // Set external user context if authenticated
+        if (req.user) {
+          hackwowClient.setExternalUser(req.user);
+        }
+        
+        // Generate entityId for Hackwow (same format used in booking)
+        const entityId = hackwowClient.constructor.generateEntityId(scheduleId, date);
+        
+        // Generate seat list from bus layout
+        const seats = [];
+        const totalSeats = schedule.bus.totalSeats;
+        
+        for (let i = 1; i <= totalSeats; i++) {
+          seats.push({
+            seatNumber: i.toString(),
+            price: schedule.fare,
+            status: bookedSeats.includes(i.toString()) ? 'BOOKED' : 'AVAILABLE',
+            metadata: {
+              busNumber: schedule.bus.busNumber,
+              route: `${schedule.route.from} -> ${schedule.route.to}`,
+              journeyDate: date
+            }
+          });
+        }
+
+        // Sync seats to Hackwow (fire and forget - don't block response)
+        hackwowClient.syncSeats(seats, entityId).catch(err => {
+          console.error('[HACKWOW] Seat sync failed:', err.message);
+        });
+
+        console.log(`[HACKWOW] Syncing ${seats.length} seats for entity: ${entityId}`);
+        
+        // Get ALL seats from Hackwow to identify locked ones
+        try {
+          const hackwowSeats = await hackwowClient.getAllSeatsWithStatus(entityId);
+          
+          // Find seats that are locked (in Redis) but not yet booked (in DB)
+          lockedSeats = hackwowSeats
+            .filter(seat => seat.isLocked && !bookedSeats.includes(seat.seatNumber))
+            .map(seat => ({
+              seatNumber: seat.seatNumber,
+              expiresAt: seat.lockExpiresAt
+            }));
+          
+          console.log(`[HACKWOW] Found ${lockedSeats.length} locked seats`);
+        } catch (lockError) {
+          console.error('[HACKWOW] Failed to fetch locked seats:', lockError.message);
+          // Don't fail - just return empty locked seats
+        }
+      } catch (syncError) {
+        console.error('[HACKWOW] Seat sync error:', syncError);
+        // Don't fail the request if sync fails
+      }
+    }
+    // ==========================================
+
     res.status(200).json({
       success: true,
       data: {
         schedule,
         seatLayout: schedule.bus.seatLayout,
         bookedSeats,
-        availableSeats: schedule.bus.totalSeats - bookedSeats.length
+        lockedSeats, // Temporarily reserved seats (2-min lock)
+        availableSeats: schedule.bus.totalSeats - bookedSeats.length - lockedSeats.length
       }
     });
   } catch (error) {

@@ -105,19 +105,35 @@ const BookingConfirmationPage = () => {
               </div>
             </div>
 
-            {/* Event Details */}
+            {/* Bus Journey Details */}
             <div className="mb-6">
               <h2 className="text-2xl font-display font-bold text-neutral-900 mb-4">
-                Event Details
+                Journey Details
               </h2>
 
               <div className="space-y-4">
                 <div className="flex items-start gap-4">
                   <Ticket className="w-6 h-6 text-primary-600 flex-shrink-0 mt-1" />
                   <div>
-                    <p className="text-sm text-neutral-600 mb-1">Event Name</p>
+                    <p className="text-sm text-neutral-600 mb-1">Bus Details</p>
                     <p className="text-lg font-semibold text-neutral-900">
-                      {booking.event?.title || booking.eventName}
+                      {booking.bus?.busName || 'N/A'}
+                    </p>
+                    <p className="text-neutral-700">
+                      {booking.bus?.busNumber || 'N/A'} • {booking.bus?.busType || 'N/A'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <MapPin className="w-6 h-6 text-primary-600 flex-shrink-0 mt-1" />
+                  <div>
+                    <p className="text-sm text-neutral-600 mb-1">Route</p>
+                    <p className="text-lg font-semibold text-neutral-900">
+                      {booking.route?.from || 'N/A'} → {booking.route?.to || 'N/A'}
+                    </p>
+                    <p className="text-neutral-700">
+                      {booking.route?.duration || 'N/A'}
                     </p>
                   </div>
                 </div>
@@ -127,20 +143,10 @@ const BookingConfirmationPage = () => {
                   <div>
                     <p className="text-sm text-neutral-600 mb-1">Date & Time</p>
                     <p className="text-lg font-semibold text-neutral-900">
-                      {formatDate(booking.event?.date || booking.eventDate)}
+                      {formatDate(booking.journeyDate)}
                     </p>
                     <p className="text-neutral-700">
-                      {booking.event?.time || booking.eventTime}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4">
-                  <MapPin className="w-6 h-6 text-primary-600 flex-shrink-0 mt-1" />
-                  <div>
-                    <p className="text-sm text-neutral-600 mb-1">Venue</p>
-                    <p className="text-lg font-semibold text-neutral-900">
-                      {booking.event?.venue || booking.venue}
+                      Departure: {booking.schedule?.departureTime || 'N/A'} | Arrival: {booking.schedule?.arrivalTime || 'N/A'}
                     </p>
                   </div>
                 </div>
@@ -152,14 +158,13 @@ const BookingConfirmationPage = () => {
               <div>
                 <h3 className="font-semibold text-neutral-900 mb-3">Seat Information</h3>
                 <div className="bg-neutral-50 rounded-lg p-4">
-                  <p className="text-sm text-neutral-600 mb-1">Seat Number</p>
+                  <p className="text-sm text-neutral-600 mb-1">Seat Number{booking.seats?.length > 1 ? 's' : ''}</p>
                   <p className="text-2xl font-bold text-primary-600">
-                    {booking.seat?.row || booking.seatRow}-
-                    {booking.seat?.number || booking.seatNumber}
+                    {booking.seats?.map(s => s.seatNumber).join(', ') || booking.seatNumber || 'N/A'}
                   </p>
-                  {(booking.seat?.type === 'vip' || booking.seatType === 'vip') && (
-                    <span className="badge badge-primary mt-2">VIP Seat</span>
-                  )}
+                  <p className="text-sm text-neutral-600 mt-2">
+                    Total: {booking.seats?.length || 1} seat{booking.seats?.length > 1 ? 's' : ''}
+                  </p>
                 </div>
               </div>
 
@@ -169,13 +174,13 @@ const BookingConfirmationPage = () => {
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm text-neutral-600">Amount Paid</span>
                     <span className="text-2xl font-bold text-success-600">
-                      {formatCurrency(booking.amount || booking.seat?.price || booking.price)}
+                      {formatCurrency(booking.totalFare || booking.amount || 0)}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-neutral-600">Payment ID</span>
-                    <span className="font-mono text-neutral-900">
-                      {booking.paymentId?.substring(0, 12)}...
+                  <div className="flex flex-col text-sm mt-3">
+                    <span className="text-neutral-600 mb-1">Payment ID</span>
+                    <span className="font-mono text-neutral-900 break-all text-xs">
+                      {booking.paymentId || booking.razorpayOrderId || 'N/A'}
                     </span>
                   </div>
                 </div>

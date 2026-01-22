@@ -99,11 +99,11 @@ const Navbar = () => {
             </Link>
 
             <Link
-              to="/bookings"
+              to="/my-bookings"
               className="flex items-center gap-2 text-neutral-900 hover:text-brand-600 transition-colors font-medium"
             >
               <List className="w-5 h-5" />
-              <span className="hidden sm:inline">Bookings</span>
+              <span className="hidden sm:inline">My Bookings</span>
             </Link>
 
             <button

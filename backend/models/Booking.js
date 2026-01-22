@@ -69,6 +69,20 @@ const bookingSchema = new mongoose.Schema({
     enum: ['pending', 'completed', 'failed', 'refunded'],
     default: 'completed'
   },
+  // Razorpay integration fields
+  paymentId: {
+    type: String,
+    default: null
+  },
+  razorpayOrderId: {
+    type: String,
+    default: null
+  },
+  // Hackwow integration field
+  hackwowBookingId: {
+    type: String,
+    default: null
+  },
   bookingDate: {
     type: Date,
     default: Date.now
