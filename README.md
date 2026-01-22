@@ -1,229 +1,363 @@
-# EventBook - Event Booking Frontend
+# Bus Booking System - Complete Full-Stack Application
 
-A professional FAANG-level React event booking application with seat selection, real-time countdown timer, and payment simulation.
+A production-ready bus booking system with React frontend and Node.js backend, featuring JWT authentication, real-time seat availability, and automated email confirmations.
 
 ## 🚀 Features
 
-- **User Authentication** - Login/Signup with JWT
-- **Event Browsing** - View and search available events
-- **Interactive Seat Selection** - Real-time seat availability
-- **2-Minute Lock Timer** - Countdown timer for seat reservation
-- **Payment Simulation** - Mock payment gateway integration
-- **Booking Confirmation** - Digital ticket generation
-- **Responsive Design** - Mobile-first Tailwind CSS
+### User Features
+- ✅ User registration and login with JWT authentication
+- ✅ Search buses by source, destination, and date
+- ✅ View bus details with real-time seat availability
+- ✅ Interactive seat selection (multiple seats)
+- ✅ Instant booking confirmation
+- ✅ Email notifications with booking details
+- ✅ View booking history
+- ✅ Cancel bookings
 
-## 🏗️ Tech Stack
+### Admin Features
+- ✅ Secure admin login (credentials in environment variables)
+- ✅ Dashboard with statistics
+- ✅ Create and manage buses
+- ✅ Define seat layouts
+- ✅ Create and manage routes
+- ✅ Create schedules (assign buses to routes)
+- ✅ View all bookings
 
-- **React 18** - Modern React with Hooks
-- **Vite** - Lightning-fast build tool
-- **Tailwind CSS** - Utility-first styling
-- **React Router v6** - Client-side routing
-- **Axios** - HTTP client
-- **Lucide React** - Beautiful icons
-- **Context API** - State management
+### System Features
+- ✅ JWT-based authentication
+- ✅ Password hashing with bcrypt
+- ✅ Role-based access control (admin/user)
+- ✅ Real-time seat availability tracking
+- ✅ Automatic seat locking on booking
+- ✅ Email service with Nodemailer (SMTP)
+- ✅ Input validation
+- ✅ Error handling middleware
+- ✅ MongoDB data persistence
+- ✅ Responsive UI design
+- ✅ Production-ready code structure
+
+## 🛠 Tech Stack
+
+### Frontend
+- React 18
+- React Router v6
+- Context API (State Management)
+- Axios (HTTP Client)
+- Tailwind CSS
+- Lucide React (Icons)
+- Vite (Build Tool)
+
+### Backend
+- Node.js
+- Express.js
+- MongoDB + Mongoose
+- JWT (jsonwebtoken)
+- Bcrypt.js
+- Nodemailer
+- Express Validator
+- Cors
 
 ## 📁 Project Structure
 
 ```
-frontend1/
-├── src/
-│   ├── components/
-│   │   ├── booking/
-│   │   │   ├── SeatSelection.jsx
-│   │   │   ├── CountdownTimer.jsx
-│   │   │   └── PaymentModal.jsx
-│   │   └── common/
-│   │       ├── Navbar.jsx
-│   │       ├── Footer.jsx
-│   │       └── ProtectedRoute.jsx
-│   ├── contexts/
-│   │   ├── AuthContext.jsx
-│   │   └── BookingContext.jsx
-│   ├── hooks/
-│   │   └── useTimer.js
-│   ├── pages/
-│   │   ├── LoginPage.jsx
-│   │   ├── SignupPage.jsx
-│   │   ├── EventsListPage.jsx
-│   │   ├── EventDetailPage.jsx
-│   │   └── BookingConfirmationPage.jsx
-│   ├── services/
-│   │   ├── apiClient.js
-│   │   ├── authService.js
-│   │   ├── eventService.js
-│   │   ├── bookingService.js
-│   │   └── paymentService.js
-│   ├── utils/
-│   │   └── helpers.js
-│   ├── config/
-│   │   └── apiConfig.js
-│   ├── App.jsx
-│   ├── main.jsx
-│   └── index.css
-├── public/
-├── index.html
-├── package.json
-├── vite.config.js
-├── tailwind.config.js
-├── postcss.config.js
-└── .env.example
+bus-booking-system/
+├── frontend/                    # React Frontend
+│   ├── src/
+│   │   ├── components/         # Reusable components
+│   │   ├── contexts/           # Context providers
+│   │   ├── pages/              # Page components
+│   │   ├── services/           # API service layer
+│   │   ├── config/             # Configuration files
+│   │   ├── utils/              # Utility functions
+│   │   └── home/               # Home page components
+│   ├── public/
+│   ├── .env                    # Environment variables
+│   └── package.json
+│
+└── backend/                     # Node.js Backend
+    ├── config/                  # Database config
+    ├── controllers/             # Request handlers
+    ├── middleware/              # Custom middleware
+    ├── models/                  # MongoDB models
+    ├── routes/                  # API routes
+    ├── services/                # Business logic
+    ├── utils/                   # Utility functions
+    ├── .env                     # Environment variables
+    ├── server.js                # Entry point
+    └── package.json
 ```
-
-## 🎨 Design System
-
-### Color Palette
-
-- **Primary**: Blue (#3b82f6)
-- **Secondary**: Purple (#a855f7)
-- **Success**: Green (#22c55e)
-- **Warning**: Yellow (#f59e0b)
-- **Error**: Red (#ef4444)
-- **Neutral**: Gray scale
-
-### Seat Status Colors
-
-- **Available**: Green
-- **Selected**: Blue
-- **Reserved**: Yellow
-- **Booked**: Red
-- **VIP**: Purple
-
-## 🔐 Security
-
-- APP_ID and API_KEY sent via headers (`X-App-Id`, `X-Api-Key`)
-- JWT token sent via `Authorization: Bearer <token>`
-- Tokens stored in localStorage
-- Protected routes with authentication check
-- Never commit `.env` file
 
 ## 🚦 Getting Started
 
 ### Prerequisites
+- Node.js (v14 or higher)
+- MongoDB (local or cloud)
+- Gmail account (for SMTP) or any SMTP service
 
-- Node.js 18+ and npm
+### Backend Setup
 
-### Installation
+1. **Navigate to backend folder**
+   ```bash
+   cd backend
+   ```
 
-1. Clone the repository
-2. Install dependencies:
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Configure environment variables**
+   
+   Create `.env` file in backend folder:
+   ```env
+   PORT=5000
+   NODE_ENV=development
+   
+   # MongoDB
+   MONGODB_URI=mongodb://localhost:27017/bus-booking
+   
+   # JWT
+   JWT_SECRET=your_super_secret_jwt_key_change_in_production
+   JWT_EXPIRE=7d
+   
+   # Admin Credentials
+   ADMIN_EMAIL=admin@busbooking.com
+   ADMIN_PASSWORD=Admin@123456
+   
+   # Email (Gmail SMTP)
+   EMAIL_HOST=smtp.gmail.com
+   EMAIL_PORT=587
+   EMAIL_SECURE=false
+   EMAIL_USER=your_email@gmail.com
+   EMAIL_PASSWORD=your_gmail_app_password
+   EMAIL_FROM=Bus Booking System <noreply@busbooking.com>
+   
+   # Frontend URL
+   FRONTEND_URL=http://localhost:5173
+   ```
+
+4. **Start MongoDB**
+   ```bash
+   # If using local MongoDB
+   mongod
+   ```
+
+5. **Run backend server**
+   ```bash
+   # Development mode
+   npm run dev
+   
+   # Production mode
+   npm start
+   ```
+
+   Server will start on `http://localhost:5000`
+
+### Frontend Setup
+
+1. **Navigate to frontend folder**
+   ```bash
+   cd frontend
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Configure environment variables**
+   
+   Create `.env` file in frontend folder:
+   ```env
+   VITE_API_BASE_URL=http://localhost:5000/api
+   ```
+
+4. **Run frontend**
+   ```bash
+   npm run dev
+   ```
+
+   App will start on `http://localhost:5173`
+
+## 📧 Email Configuration (Gmail)
+
+1. Enable 2-Factor Authentication in your Gmail account
+2. Generate an App Password:
+   - Go to Google Account Settings → Security
+   - Under "Signing in to Google", select "App passwords"
+   - Generate a new app password for "Mail"
+3. Use this app password in `EMAIL_PASSWORD` in backend `.env`
+
+## 🔐 Authentication Flow
+
+### User Authentication
+1. User registers with email and password
+2. Password is hashed using bcrypt (10 salt rounds)
+3. JWT token generated and returned
+4. Token stored in localStorage
+5. Token included in all authenticated requests via Authorization header
+
+### Admin Authentication
+1. Admin credentials stored securely in `.env`
+2. Admin logs in using environment credentials
+3. First login creates admin user in database
+4. JWT token with admin role issued
+5. Admin routes protected with role-based middleware
+
+## 🎫 Booking Flow
+
+1. **User searches** for buses by entering source, destination, and date
+2. **System returns** available buses with route and seat details
+3. **User selects** a bus and views seat layout
+4. **User selects** one or more seats
+5. **User enters** passenger details (name, email, phone)
+6. **System verifies** seat availability
+7. **Booking created** and seats marked as booked in database
+8. **Email sent** to user with complete booking details
+9. **User receives** booking confirmation with booking ID
+
+## 📊 Database Models
+
+### User
+- name, email, password (hashed), role, phone, createdAt
+
+### Bus
+- busNumber, busName, busType, totalSeats, seatLayout, amenities, isActive
+
+### Route
+- from, to, distance, duration, baseFare, stops, isActive
+
+### Schedule
+- route (ref), bus (ref), departureTime, arrivalTime, fare, availableDays, validFrom, validTo, isActive
+
+### Booking
+- bookingId (auto-generated), user (ref), schedule (ref), route (ref), bus (ref), journeyDate, seats, totalFare, passengerDetails, status, paymentStatus
+
+### SeatAvailability
+- schedule (ref), journeyDate, bookedSeats (array)
+
+## 🔌 API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - Register user
+- `POST /api/auth/login` - User login
+- `GET /api/auth/me` - Get current user (Protected)
+
+### Admin
+- `POST /api/admin/login` - Admin login
+- `GET /api/admin/dashboard` - Dashboard stats (Admin)
+- `GET/POST /api/admin/buses` - Manage buses (Admin)
+- `GET/POST /api/admin/routes` - Manage routes (Admin)
+- `GET/POST /api/admin/schedules` - Manage schedules (Admin)
+- `GET /api/admin/bookings` - View all bookings (Admin)
+
+### Bus Search
+- `GET /api/buses/search` - Search available buses
+- `GET /api/buses/:scheduleId/seats` - Get seat layout
+
+### Bookings
+- `POST /api/bookings` - Create booking (Protected)
+- `GET /api/bookings/my-bookings` - User bookings (Protected)
+- `GET /api/bookings/:id` - Booking details (Protected)
+- `PUT /api/bookings/:id/cancel` - Cancel booking (Protected)
+
+## 🧪 Testing the Application
+
+### 1. Test Backend
 ```bash
-npm install
+# Health check
+curl http://localhost:5000/api/health
+
+# Register user
+curl -X POST http://localhost:5000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"John Doe","email":"john@example.com","password":"Test@123","phone":"9876543210"}'
 ```
 
-3. Create `.env` file from `.env.example`:
-```bash
-cp .env.example .env
-```
+### 2. Test Frontend
+1. Open `http://localhost:5173`
+2. Register a new account
+3. Login
+4. Search for buses
+5. Select seats and book
+6. Check email for confirmation
 
-4. Update `.env` with your API credentials:
-```env
-VITE_API_BASE_URL=https://your-api-url.com
-VITE_APP_ID=your_app_id
-VITE_API_KEY=your_api_key
-```
-
-### Development
-
-Run the development server:
-```bash
-npm run dev
-```
-
-Application will be available at `http://localhost:3000`
-
-### Build
-
-Build for production:
-```bash
-npm run build
-```
-
-Preview production build:
-```bash
-npm run preview
-```
-
-## 🔄 Booking Flow
-
-1. **User Login/Signup** → Authenticate with backend
-2. **Browse Events** → View available events
-3. **Select Event** → View event details and seat layout
-4. **Select Seat** → Click on available seat
-5. **Seat Reserved** → 2-minute countdown timer starts
-6. **Complete Payment** → Simulate payment
-7. **Booking Confirmed** → Download ticket
-
-## 📡 API Integration
-
-All API calls include:
+### 3. Quick Connection Test
+Run in browser console:
 ```javascript
-headers: {
-  'X-App-Id': 'your_app_id',
-  'X-Api-Key': 'your_api_key',
-  'Authorization': 'Bearer <jwt_token>'
-}
+fetch('http://localhost:5000/api/health')
+  .then(r => r.json())
+  .then(data => console.log('Backend Status:', data));
 ```
 
-### API Endpoints
+## 🎨 Frontend-Backend Integration
 
-- `POST /auth/login` - User login
-- `POST /auth/signup` - User registration
-- `GET /events` - Get all events
-- `GET /events/:id` - Get event details
-- `GET /events/:id/seats` - Get seat layout
-- `POST /seats/reserve` - Reserve a seat
-- `POST /bookings/create` - Create booking
-- `POST /bookings/confirm` - Confirm booking
+All frontend services are fully integrated:
 
-## 🎯 Key Components
+- ✅ **authService** → `/api/auth/*`
+- ✅ **eventService** → `/api/buses/*`
+- ✅ **bookingService** → `/api/bookings/*`
+- ✅ **adminService** → `/api/admin/*`
 
-### AuthContext
-Manages user authentication state and provides login/signup/logout methods.
+See [BACKEND_CONNECTION.md](frontend/BACKEND_CONNECTION.md) for detailed integration docs.
 
-### BookingContext
-Handles booking flow, seat selection, and timer management.
+## 🚢 Deployment
 
-### SeatSelection
-Interactive seat map with real-time availability.
+### Backend (Node.js)
+- Deploy to: Heroku, Railway, Render, or any Node.js hosting
+- Set environment variables in hosting platform
+- Update MongoDB URI to cloud MongoDB (MongoDB Atlas)
 
-### CountdownTimer
-Visual countdown with progress bar and warnings.
+### Frontend (React)
+- Build: `npm run build`
+- Deploy to: Vercel, Netlify, or any static hosting
+- Update `VITE_API_BASE_URL` to production backend URL
 
-### PaymentModal
-Payment simulation with booking summary.
+## 📝 Sample Data
 
-## 📱 Responsive Design
+To test the system, you'll need to:
 
-- Mobile-first approach
-- Breakpoints: sm (640px), md (768px), lg (1024px), xl (1280px)
-- Touch-friendly seat selection
-- Optimized for all screen sizes
+1. **Login as Admin** (using credentials from `.env`)
+2. **Create Buses** with seat layouts
+3. **Create Routes** (e.g., Bangalore to Chennai)
+4. **Create Schedules** (assign buses to routes with timings)
+5. **Users can then search and book**
 
-## 🚀 Deployment
+## 🔒 Security Features
 
-### Vercel (Recommended)
+- ✅ Password hashing (bcrypt with 10 salt rounds)
+- ✅ JWT token authentication
+- ✅ HTTP-only recommendations for production
+- ✅ CORS enabled with specific origin
+- ✅ Input validation on all routes
+- ✅ Error handling middleware
+- ✅ Protected routes with authentication middleware
+- ✅ Role-based access control
 
-1. Push code to GitHub
-2. Import project in Vercel
-3. Add environment variables
-4. Deploy
+## 📄 License
 
-```bash
-# Install Vercel CLI
-npm i -g vercel
+ISC
 
-# Deploy
-vercel
-```
+## 👥 Support
 
-## 📝 License
+For issues or questions:
+1. Check backend logs in terminal
+2. Check frontend console for errors
+3. Verify MongoDB is running
+4. Ensure environment variables are set correctly
+5. Check API endpoint responses in Network tab
 
-MIT
+## 🎯 Next Steps
 
-## 👨‍💻 Author
-
-FAANG-level Frontend Engineer
+1. ✅ Complete backend API
+2. ✅ Integrate frontend with backend
+3. ⚠️ Update UI components for new data structure
+4. ⚠️ Add admin dashboard UI
+5. ⚠️ Add payment gateway integration
+6. ⚠️ Deploy to production
+7. ⚠️ Add more bus operators
+8. ⚠️ Add user reviews and ratings
 
 ---
 
-**Built with ❤️ using React, Vite, and Tailwind CSS**
+**Built with ❤️ using React, Node.js, Express, and MongoDB**
