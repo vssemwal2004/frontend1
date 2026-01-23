@@ -309,11 +309,20 @@ export const BookingProvider = ({ children }) => {
               resolve(confirmResponse);
             } catch (err) {
               console.error('[Booking] Confirmation failed:', err);
+              
+              // Release seat if confirmation fails
+              await releaseSeatOnFailure(seatNumber, reservationToken);
+              
               reject(err);
             }
           },
           modal: {
-            ondismiss: function() {
+            ondismiss: async function() {
+              console.log('[Booking] Payment cancelled by user');
+              
+              // Release seat immediately when payment is cancelled
+              await releaseSeatOnFailure(seatNumber, reservationToken);
+              
               reject(new Error('Payment cancelled by user'));
             }
           },
@@ -328,9 +337,58 @@ export const BookingProvider = ({ children }) => {
     } catch (err) {
       const errorMessage = handleApiError(err);
       setError(errorMessage);
+      
+      // Release seat on any error (order creation failed, etc.)
+      const reservationToken = seatReservations[seatNumber];
+      if (reservationToken) {
+        await releaseSeatOnFailure(seatNumber, reservationToken);
+      }
+      
       throw new Error(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  /**
+   * Helper function to release seat when payment/booking fails
+   * @private
+   */
+  const releaseSeatOnFailure = async (seatNumber, reservationToken) => {
+    try {
+      console.log(`[Booking] Releasing seat ${seatNumber} due to payment failure/cancellation`);
+      
+      // Clear timer
+      const timerId = seatTimers[seatNumber];
+      if (timerId) {
+        clearTimeout(timerId);
+      }
+      
+      // Call backend to release
+      if (reservationToken) {
+        await bookingService.releaseSeat(reservationToken);
+      }
+      
+      // Clear local state
+      setSelectedSeats(prev => prev.filter(s => s !== seatNumber));
+      setSeatReservations(prev => {
+        const updated = { ...prev };
+        delete updated[seatNumber];
+        return updated;
+      });
+      setSeatTimers(prev => {
+        const updated = { ...prev };
+        delete updated[seatNumber];
+        return updated;
+      });
+      
+      // Refresh to show seat as available to others
+      await loadSchedule(currentSchedule._id, journeyDate);
+      
+      console.log(`[Booking] Seat ${seatNumber} released successfully`);
+    } catch (releaseErr) {
+      console.error('[Booking] Failed to release seat:', releaseErr);
+      // Don't throw - just log the error
     }
   };
 
