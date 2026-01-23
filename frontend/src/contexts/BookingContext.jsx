@@ -218,7 +218,7 @@ export const BookingProvider = ({ children }) => {
 
   /**
    * Complete booking with Hackwow 3-step flow
-   * 1. Reserve seat (2 min lock)
+   * 1. Reserve seat (ALREADY DONE on seat click)
    * 2. Create Razorpay order
    * 3. Show Razorpay checkout → Confirm booking
    * 
@@ -237,56 +237,82 @@ export const BookingProvider = ({ children }) => {
     }
 
     // Currently only supports single seat booking
-    // TODO: Support multiple seats by calling reserveSeat for each
     if (selectedSeats.length > 1) {
       throw new Error('Multiple seat booking not yet supported. Please select one seat at a time.');
     }
 
     const seatNumber = selectedSeats[0];
+    const reservationToken = seatReservations[seatNumber];
+
+    if (!reservationToken) {
+      throw new Error('Reservation token not found. Please reselect the seat.');
+    }
 
     try {
       setLoading(true);
       setError(null);
 
-      const seatData = {
-        scheduleId: currentSchedule._id,
-        journeyDate,
-        seatNumber
-      };
+      console.log('[Booking] Step 1: Using existing reservation token:', reservationToken);
 
-      const razorpayConfig = {
-        name: 'Bus Booking System',
-        description: `${currentSchedule.route?.from} → ${currentSchedule.route?.to} | Seat ${seatNumber}`,
-        themeColor: '#3399cc'
-      };
+      // Step 2: Create Razorpay order with existing reservation
+      const orderResponse = await bookingService.createOrder(reservationToken);
+      console.log('[Booking] Step 2: Order created:', orderResponse);
 
-      // Use the 3-step Hackwow booking flow with Razorpay
-      const result = await completeBookingFlow({
-        bookingService,
-        seatData,
-        passengerDetails,
-        razorpayConfig,
-        onReserved: (reservation) => {
-          console.log('[Booking] Seat reserved:', reservation.reservationToken);
-        },
-        onOrderCreated: (order) => {
-          console.log('[Booking] Order created:', order.orderId);
-        },
-        onPaymentSuccess: (payment) => {
-          console.log('[Booking] Payment successful:', payment.razorpay_payment_id);
-        },
-        onBookingConfirmed: (booking) => {
-          console.log('[Booking] Booking confirmed:', booking.booking?.bookingId);
-        },
-        onError: (err) => {
-          console.error('[Booking] Error:', err);
-        }
+      // Step 3: Show Razorpay checkout
+      return new Promise((resolve, reject) => {
+        const options = {
+          key: orderResponse.keyId || orderResponse.razorpayKeyId,
+          amount: orderResponse.amount,
+          currency: orderResponse.currency,
+          name: 'Bus Booking System',
+          description: `${currentSchedule.route?.from} → ${currentSchedule.route?.to} | Seat ${seatNumber}`,
+          order_id: orderResponse.orderId,
+          handler: async function (response) {
+            try {
+              console.log('[Booking] Step 4: Payment successful, confirming booking...');
+              
+              // Step 4: Confirm booking after payment
+              const confirmResponse = await bookingService.confirmBooking({
+                reservationToken,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                passengerDetails
+              });
+
+              console.log('[Booking] Booking confirmed:', confirmResponse);
+
+              // Clear the timer since booking is complete
+              const timerId = seatTimers[seatNumber];
+              if (timerId) {
+                clearTimeout(timerId);
+              }
+
+              // Clear selections
+              setSelectedSeats([]);
+              setSeatReservations({});
+              setSeatTimers({});
+              setError(null);
+
+              resolve(confirmResponse);
+            } catch (err) {
+              console.error('[Booking] Confirmation failed:', err);
+              reject(err);
+            }
+          },
+          modal: {
+            ondismiss: function() {
+              reject(new Error('Payment cancelled by user'));
+            }
+          },
+          theme: {
+            color: '#3399cc'
+          }
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
       });
-
-      // Clear booking state on success
-      setSelectedSeats([]);
-      
-      return result;
     } catch (err) {
       const errorMessage = handleApiError(err);
       setError(errorMessage);
