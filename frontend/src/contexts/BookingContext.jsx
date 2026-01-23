@@ -270,15 +270,32 @@ export const BookingProvider = ({ children }) => {
       const orderResponse = await bookingService.createOrder(reservationToken);
       console.log('[Booking] Step 2: Order created:', orderResponse);
 
+      // Validate Razorpay script is loaded
+      if (typeof window.Razorpay === 'undefined') {
+        throw new Error('Razorpay SDK not loaded. Please refresh the page and try again.');
+      }
+
+      // Extract order data from response (handle nested structure)
+      const orderData = orderResponse.data || orderResponse;
+      const razorpayKey = orderData.keyId || orderData.razorpayKeyId || orderResponse.keyId;
+      
+      if (!razorpayKey) {
+        console.error('[Booking] Missing Razorpay key in response:', orderResponse);
+        throw new Error('Payment configuration error. Please contact support.');
+      }
+
+      console.log('[Booking] Razorpay key:', razorpayKey);
+      console.log('[Booking] Order ID:', orderData.orderId || orderResponse.orderId);
+
       // Step 3: Show Razorpay checkout
       return new Promise((resolve, reject) => {
         const options = {
-          key: orderResponse.keyId || orderResponse.razorpayKeyId,
-          amount: orderResponse.amount,
-          currency: orderResponse.currency,
+          key: razorpayKey,
+          amount: orderData.amount || orderResponse.amount,
+          currency: orderData.currency || orderResponse.currency || 'INR',
           name: 'Bus Booking System',
           description: `${currentSchedule.route?.from} → ${currentSchedule.route?.to} | Seat ${seatNumber}`,
-          order_id: orderResponse.orderId,
+          order_id: orderData.orderId || orderResponse.orderId,
           handler: async function (response) {
             try {
               console.log('[Booking] Step 4: Payment successful, confirming booking...');
@@ -328,11 +345,25 @@ export const BookingProvider = ({ children }) => {
           },
           theme: {
             color: '#3399cc'
+          },
+          prefill: {
+            name: passengerDetails.name,
+            email: passengerDetails.email,
+            contact: passengerDetails.phone
           }
         };
 
-        const rzp = new window.Razorpay(options);
-        rzp.open();
+        try {
+          const rzp = new window.Razorpay(options);
+          rzp.on('payment.failed', function (response) {
+            console.error('[Booking] Payment failed:', response.error);
+            reject(new Error(response.error.description || 'Payment failed'));
+          });
+          rzp.open();
+        } catch (rzpError) {
+          console.error('[Booking] Razorpay initialization error:', rzpError);
+          reject(new Error('Failed to initialize payment gateway. Please try again.'));
+        }
       });
     } catch (err) {
       const errorMessage = handleApiError(err);

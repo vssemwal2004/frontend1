@@ -246,6 +246,9 @@ exports.createRazorpayOrder = async (req, res, next) => {
     res.status(200).json({
       success: true,
       orderId: orderData.orderId,
+      amount: orderData.amount,
+      currency: orderData.currency,
+      keyId: orderData.keyId, // Razorpay key at top level
       data: {
         orderId: orderData.orderId,
         amount: orderData.amount,
