@@ -114,18 +114,26 @@ export const BookingProvider = ({ children }) => {
       const reservationToken = seatReservations[seatNumber];
       const timerId = seatTimers[seatNumber];
       
+      console.log(`[Booking] User deselecting seat ${seatNumber}`, { reservationToken, hasTimer: !!timerId });
+      
       // Clear auto-release timer if exists
       if (timerId) {
         clearTimeout(timerId);
+        console.log(`[Booking] Cleared auto-release timer for seat ${seatNumber}`);
       }
       
       if (reservationToken) {
         try {
           await bookingService.releaseSeat(reservationToken);
-          console.log(`[Booking] Released seat ${seatNumber}`);
+          console.log(`[Booking] Released seat ${seatNumber} from Hackwow`);
         } catch (err) {
-          console.error('[Booking] Failed to release seat:', err);
-          // Continue anyway to allow UI deselection
+          // 409 means seat is already booked - this is actually fine
+          if (err.response?.status === 409) {
+            console.log(`[Booking] Seat ${seatNumber} already confirmed/booked - skipping release`);
+          } else {
+            console.error('[Booking] Failed to release seat:', err);
+          }
+          // Continue with local cleanup regardless
         }
       }
       
@@ -397,7 +405,18 @@ export const BookingProvider = ({ children }) => {
       
       // Call backend to release
       if (reservationToken) {
-        await bookingService.releaseSeat(reservationToken);
+        try {
+          await bookingService.releaseSeat(reservationToken);
+          console.log(`[Booking] Seat ${seatNumber} released from Hackwow`);
+        } catch (releaseApiErr) {
+          // 409 means seat is already booked/confirmed - this is fine
+          if (releaseApiErr.response?.status === 409) {
+            console.log(`[Booking] Seat ${seatNumber} already booked/confirmed - no need to release`);
+          } else {
+            console.error('[Booking] API release failed:', releaseApiErr.message);
+          }
+          // Don't throw - continue with local cleanup
+        }
       }
       
       // Clear local state
@@ -413,10 +432,14 @@ export const BookingProvider = ({ children }) => {
         return updated;
       });
       
-      // Refresh to show seat as available to others
-      await loadSchedule(currentSchedule._id, journeyDate);
+      // Refresh to show current seat status
+      try {
+        await loadSchedule(currentSchedule._id, journeyDate);
+      } catch (loadErr) {
+        console.error('[Booking] Failed to refresh seat layout:', loadErr);
+      }
       
-      console.log(`[Booking] Seat ${seatNumber} released successfully`);
+      console.log(`[Booking] Local state cleaned for seat ${seatNumber}`);
     } catch (releaseErr) {
       console.error('[Booking] Failed to release seat:', releaseErr);
       // Don't throw - just log the error
