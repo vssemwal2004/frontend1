@@ -244,7 +244,19 @@ export const BookingProvider = ({ children }) => {
     const seatNumber = selectedSeats[0];
     const reservationToken = seatReservations[seatNumber];
 
+    console.log('[Booking] Payment flow starting:', {
+      seatNumber,
+      reservationToken,
+      allReservations: seatReservations,
+      selectedSeats
+    });
+
     if (!reservationToken) {
+      console.error('[Booking] Reservation token missing!', {
+        seatNumber,
+        seatReservations,
+        selectedSeats
+      });
       throw new Error('Reservation token not found. Please reselect the seat.');
     }
 
