@@ -196,7 +196,9 @@ class HackwowClient {
         params: { entityId },
         ...this.getHeaders()
       });
-      return response.data.seats || response.data;
+      const seats = response.data.seats || response.data.data?.seats || response.data;
+      // Always return an array
+      return Array.isArray(seats) ? seats : [];
     } catch (error) {
       throw this.formatError(error, 'Get seats failed');
     }
@@ -215,7 +217,9 @@ class HackwowClient {
         params: { entityId },
         ...this.getHeaders()
       });
-      return response.data.seats || response.data;
+      const seats = response.data.seats || response.data.data?.seats || response.data;
+      // Always return an array
+      return Array.isArray(seats) ? seats : [];
     } catch (error) {
       throw this.formatError(error, 'Get seat status failed');
     }

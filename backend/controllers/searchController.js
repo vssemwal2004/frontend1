@@ -96,7 +96,10 @@ exports.searchBuses = async (req, res, next) => {
             
             const entityId = hackwowClient.constructor.generateEntityId(schedule._id.toString(), date);
             const hackwowSeats = await hackwowClient.getAllSeatsWithStatus(entityId);
-            lockedSeatsCount = hackwowSeats.filter(seat => seat.isLocked && !bookedSeats.includes(seat.seatNumber)).length;
+            // Ensure hackwowSeats is an array before filtering
+            if (Array.isArray(hackwowSeats)) {
+              lockedSeatsCount = hackwowSeats.filter(seat => seat.isLocked && !bookedSeats.includes(seat.seatNumber)).length;
+            }
           } catch (err) {
             console.error('[HACKWOW] Failed to get locked seats count:', err.message);
             // Silently fail - just don't show locked seats count
@@ -217,14 +220,17 @@ exports.getBusSeats = async (req, res, next) => {
           const hackwowSeats = await hackwowClient.getAllSeatsWithStatus(entityId);
           
           // Find seats that are locked (in Redis) but not yet booked (in DB)
-          lockedSeats = hackwowSeats
-            .filter(seat => seat.isLocked && !bookedSeats.includes(seat.seatNumber))
-            .map(seat => ({
-              seatNumber: seat.seatNumber,
-              expiresAt: seat.lockExpiresAt
-            }));
-          
-          console.log(`[HACKWOW] Found ${lockedSeats.length} locked seats`);
+          // Ensure hackwowSeats is an array before filtering
+          if (Array.isArray(hackwowSeats)) {
+            lockedSeats = hackwowSeats
+              .filter(seat => seat.isLocked && !bookedSeats.includes(seat.seatNumber))
+              .map(seat => ({
+                seatNumber: seat.seatNumber,
+                expiresAt: seat.lockExpiresAt
+              }));
+            
+            console.log(`[HACKWOW] Found ${lockedSeats.length} locked seats`);
+          }
         } catch (lockError) {
           console.error('[HACKWOW] Failed to fetch locked seats:', lockError.message);
           // Don't fail - just return empty locked seats
