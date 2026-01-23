@@ -82,11 +82,24 @@ exports.searchBuses = async (req, res, next) => {
         let lockedSeatsCount = 0;
         if (process.env.USE_HACKWOW === 'true') {
           try {
+            // Set external user context if user is logged in, otherwise use anonymous
+            if (req.user) {
+              hackwowClient.setExternalUser(req.user);
+            } else {
+              // For anonymous users, set a temporary context
+              hackwowClient.setExternalUser({ 
+                _id: 'anonymous', 
+                email: 'anonymous@temp.com', 
+                name: 'Guest' 
+              });
+            }
+            
             const entityId = hackwowClient.constructor.generateEntityId(schedule._id.toString(), date);
             const hackwowSeats = await hackwowClient.getAllSeatsWithStatus(entityId);
             lockedSeatsCount = hackwowSeats.filter(seat => seat.isLocked && !bookedSeats.includes(seat.seatNumber)).length;
           } catch (err) {
             console.error('[HACKWOW] Failed to get locked seats count:', err.message);
+            // Silently fail - just don't show locked seats count
           }
         }
         
@@ -160,9 +173,16 @@ exports.getBusSeats = async (req, res, next) => {
     
     if (process.env.USE_HACKWOW === 'true') {
       try {
-        // Set external user context if authenticated
+        // Set external user context if authenticated, otherwise use anonymous
         if (req.user) {
           hackwowClient.setExternalUser(req.user);
+        } else {
+          // For anonymous users, set a temporary context
+          hackwowClient.setExternalUser({ 
+            _id: 'anonymous', 
+            email: 'anonymous@temp.com', 
+            name: 'Guest' 
+          });
         }
         
         // Generate entityId for Hackwow (same format used in booking)

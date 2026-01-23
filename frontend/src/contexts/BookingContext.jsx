@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { bookingService } from '@/services/bookingService';
 import { eventService } from '@/services/eventService';
 import { handleApiError } from '@/utils/helpers';
@@ -15,11 +15,35 @@ export const BookingProvider = ({ children }) => {
   const [currentSchedule, setCurrentSchedule] = useState(null);
   const [seatLayout, setSeatLayout] = useState(null);
   const [selectedSeats, setSelectedSeats] = useState([]);
+  const [seatReservations, setSeatReservations] = useState({}); // Map: seatNumber -> reservationToken
+  const [seatTimers, setSeatTimers] = useState({}); // Map: seatNumber -> timeoutId for auto-release
   const [journeyDate, setJourneyDate] = useState(null);
   const [bookedSeats, setBookedSeats] = useState([]);
   const [lockedSeats, setLockedSeats] = useState([]); // Temporarily reserved seats (Redis locks)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Auto-refresh seat status every 10 seconds to show real-time changes
+  useEffect(() => {
+    if (!currentSchedule || !journeyDate) return;
+
+    const refreshInterval = setInterval(async () => {
+      try {
+        console.log('[Booking] Auto-refreshing seat status...');
+        const layoutData = await eventService.getBusSeats(currentSchedule._id, journeyDate);
+        
+        if (layoutData.success && layoutData.data) {
+          setLockedSeats(layoutData.data.lockedSeats || []);
+          setBookedSeats(layoutData.data.bookedSeats || []);
+        }
+      } catch (err) {
+        // Silent fail - don't interrupt user experience
+        console.error('[Booking] Auto-refresh failed:', err);
+      }
+    }, 10000); // Refresh every 10 seconds
+
+    return () => clearInterval(refreshInterval);
+  }, [currentSchedule, journeyDate]);
 
   /**
    * Load schedule details and seat layout
@@ -60,10 +84,10 @@ export const BookingProvider = ({ children }) => {
   };
 
   /**
-   * Toggle seat selection
+   * Toggle seat selection with Hackwow API calls
    * @param {string} seatNumber - Seat number to toggle
    */
-  const toggleSeatSelection = (seatNumber) => {
+  const toggleSeatSelection = async (seatNumber) => {
     // Convert to both string and number for comparison
     const seatNumStr = String(seatNumber);
     const seatNumInt = Number(seatNumber);
@@ -83,16 +107,105 @@ export const BookingProvider = ({ children }) => {
       return;
     }
 
-    setSelectedSeats(prev => {
-      if (prev.includes(seatNumber)) {
-        // Deselect seat
-        return prev.filter(s => s !== seatNumber);
-      } else {
-        // Select seat
-        return [...prev, seatNumber];
+    const isCurrentlySelected = selectedSeats.includes(seatNumber);
+
+    if (isCurrentlySelected) {
+      // User is DESELECTING - release the seat lock
+      const reservationToken = seatReservations[seatNumber];
+      const timerId = seatTimers[seatNumber];
+      
+      // Clear auto-release timer if exists
+      if (timerId) {
+        clearTimeout(timerId);
       }
-    });
-    setError(null);
+      
+      if (reservationToken) {
+        try {
+          await bookingService.releaseSeat(reservationToken);
+          console.log(`[Booking] Released seat ${seatNumber}`);
+        } catch (err) {
+          console.error('[Booking] Failed to release seat:', err);
+          // Continue anyway to allow UI deselection
+        }
+      }
+      
+      // Remove from selected seats, reservations, and timers
+      setSelectedSeats(prev => prev.filter(s => s !== seatNumber));
+      setSeatReservations(prev => {
+        const updated = { ...prev };
+        delete updated[seatNumber];
+        return updated;
+      });
+      setSeatTimers(prev => {
+        const updated = { ...prev };
+        delete updated[seatNumber];
+        return updated;
+      });
+      setError(null);
+      
+      // Refresh to show seat as available to others
+      setTimeout(() => loadSchedule(currentSchedule._id, journeyDate), 500);
+    } else {
+      // User is SELECTING - reserve the seat (temporary lock)
+      try {
+        setLoading(true);
+        const response = await bookingService.reserveSeat({
+          scheduleId: currentSchedule._id,
+          journeyDate,
+          seatNumber
+        });
+        
+        console.log(`[Booking] Reserved seat ${seatNumber}, token:`, response.reservationToken);
+        
+        // Store reservation token for later release
+        setSeatReservations(prev => ({
+          ...prev,
+          [seatNumber]: response.reservationToken
+        }));
+        
+        // Add to selected seats
+        setSelectedSeats(prev => [...prev, seatNumber]);
+        setError(null);
+        
+        // Auto-release after 2 minutes (same as backend TTL)
+        const timerId = setTimeout(async () => {
+          console.log(`[Booking] Auto-releasing seat ${seatNumber} after 2 minutes`);
+          setSelectedSeats(prev => prev.filter(s => s !== seatNumber));
+          setSeatReservations(prev => {
+            const updated = { ...prev };
+            delete updated[seatNumber];
+            return updated;
+          });
+          setSeatTimers(prev => {
+            const updated = { ...prev };
+            delete updated[seatNumber];
+            return updated;
+          });
+          setError('Your seat selection expired. Please select again.');
+          
+          // Refresh seat layout to update colors (green for everyone)
+          try {
+            await loadSchedule(currentSchedule._id, journeyDate);
+          } catch (err) {
+            console.error('[Booking] Failed to refresh after auto-release:', err);
+          }
+        }, 120000); // 2 minutes = 120000ms
+        
+        setSeatTimers(prev => ({
+          ...prev,
+          [seatNumber]: timerId
+        }));
+        
+        // Refresh to show seat as locked to others
+        setTimeout(() => loadSchedule(currentSchedule._id, journeyDate), 500);
+      } catch (err) {
+        const errorMessage = handleApiError(err);
+        setError(errorMessage);
+        console.error('[Booking] Failed to reserve seat:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
   /**
